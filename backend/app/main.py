@@ -50,18 +50,20 @@ async def explain_document(document_id: str, question_text: str = Form(...)):
     async with get_db() as (conn, cur):
         # Embed the question
         question_vec = embed_text_list([question_text])[0]
+        # Convert list to string format for pgvector: '[0.1, 0.2, ...]'
+        vec_str = '[' + ','.join(map(str, question_vec)) + ']'
         # SQL query: find top 3 pages for this document
         await cur.execute(
             """
             select dp.page_number, dp.page_text,
-                   (de.embedding <#> %s) as cosine_distance
+                   (de.embedding <#> %s::vector) as cosine_distance
             from document_embedding de
             join document_page dp using (document_id, page_number)
             where de.document_id = %s
-            order by de.embedding <#> %s
+            order by de.embedding <#> %s::vector
             limit 3
             """,
-            (question_vec, document_id, question_vec)
+            (vec_str, document_id, vec_str)
         )
         rows = await cur.fetchall()
 
