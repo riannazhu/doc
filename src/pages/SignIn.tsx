@@ -39,6 +39,17 @@ const SignIn = () => {
     setLoading(true);
 
     try {
+      // DEMO MODE: Allow any email with password "test123" to bypass auth
+      if (password === "test123") {
+        toast({
+          title: "Signed in!",
+          description: "Welcome to Doc (demo mode)",
+        });
+        setLoading(false);
+        navigate("/dashboard");
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
